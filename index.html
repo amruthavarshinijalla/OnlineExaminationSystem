@@ -5,29 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online Examination System</title>
     <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
 </head>
 <body>
 
     <header>
         <h1>Online Examination System</h1>
-        <p>Manage examination schedules in one place</p>
+        <p>Manage examination schedules using the Factory Method Design Pattern</p>
     </header>
 
     <main class="container">
 
         <section class="card">
-            <h2>Singleton Design Pattern</h2>
+            <h2>Factory Method Design Pattern</h2>
             <p>
-                A centralized ExamManager manages examination schedules
-                and ensures that the same instance is reused.
+                Select an examination type and let the factory create
+                the appropriate examination object.
             </p>
 
-            <button id="verifyBtn" class="secondary-btn">
-                Verify Singleton
+            <button id="verifyBtn" class="secondary-btn" type="button">
+                Verify Factory Method
             </button>
 
-            <p id="singletonStatus" class="status" aria-live="polite">
-                Click the button to verify the Singleton instance.
+            <p id="factoryStatus" class="status" aria-live="polite">
+                Click the button to test the factory.
             </p>
         </section>
 
@@ -35,6 +36,15 @@
             <h2>Add Examination</h2>
 
             <form id="examForm">
+
+                <label for="examType">Examination Type</label>
+                <select id="examType" required>
+                    <option value="">Select examination type</option>
+                    <option value="MCQ">MCQ Examination</option>
+                    <option value="Programming">Programming Examination</option>
+                    <option value="Written">Written Examination</option>
+                </select>
+
                 <label for="subject">Subject Name</label>
                 <input
                     type="text"
@@ -52,13 +62,13 @@
                 <label for="details">Examination Details</label>
                 <textarea
                     id="details"
-                    placeholder="Enter examination details"
                     rows="3"
+                    placeholder="Enter examination details"
                     required
                 ></textarea>
 
                 <button type="submit" class="primary-btn">
-                    Add Examination
+                    Create Examination
                 </button>
             </form>
         </section>
@@ -70,9 +80,7 @@
             </div>
 
             <div id="examList">
-                <p class="empty-message">
-                    No examinations scheduled yet.
-                </p>
+                <p class="empty-message">No examinations scheduled yet.</p>
             </div>
 
             <button id="clearBtn" class="delete-btn" type="button">
@@ -83,9 +91,8 @@
     </main>
 
     <footer>
-        <p>Online Examination System | Singleton Design Pattern</p>
+        <p>Online Examination System | Factory Method Design Pattern</p>
     </footer>
 
-    <script src="script.js"></script>
 </body>
 </html>
