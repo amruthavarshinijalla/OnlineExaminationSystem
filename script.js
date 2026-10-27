@@ -1,3 +1,130 @@
+"use strict";
+
+// ========================================
+// 1. Base Examination Product
+// ========================================
+
+class Exam {
+    constructor(subject, date, time, details) {
+        this.id = Date.now().toString()
+            + Math.random().toString(16).slice(2);
+
+        this.subject = subject;
+        this.date = date;
+        this.time = time;
+        this.details = details;
+    }
+
+    getExamType() {
+        return "General Examination";
+    }
+}
+
+
+// ========================================
+// 2. Concrete Examination Products
+// ========================================
+
+class MCQExam extends Exam {
+    getExamType() {
+        return "MCQ Examination";
+    }
+}
+
+class ProgrammingExam extends Exam {
+    getExamType() {
+        return "Programming Examination";
+    }
+}
+
+class WrittenExam extends Exam {
+    getExamType() {
+        return "Written Examination";
+    }
+}
+
+
+// ========================================
+// 3. Base Creator
+// ========================================
+
+class ExamCreator {
+    createExam(subject, date, time, details) {
+        throw new Error(
+            "Subclasses must implement createExam()."
+        );
+    }
+}
+
+
+// ========================================
+// 4. Concrete Creators
+// ========================================
+
+class MCQExamCreator extends ExamCreator {
+    createExam(subject, date, time, details) {
+        return new MCQExam(subject, date, time, details);
+    }
+}
+
+class ProgrammingExamCreator extends ExamCreator {
+    createExam(subject, date, time, details) {
+        return new ProgrammingExam(
+            subject, date, time, details
+        );
+    }
+}
+
+class WrittenExamCreator extends ExamCreator {
+    createExam(subject, date, time, details) {
+        return new WrittenExam(
+            subject, date, time, details
+        );
+    }
+}
+
+
+// ========================================
+// 5. Factory Method Registry
+// ========================================
+
+class ExamFactory {
+    static creators = {
+        MCQ: new MCQExamCreator(),
+        Programming: new ProgrammingExamCreator(),
+        Written: new WrittenExamCreator()
+    };
+
+    static createExam(type, subject, date, time, details) {
+        const creator = ExamFactory.creators[type];
+
+        if (!creator) {
+            throw new Error("Invalid examination type.");
+        }
+
+        // The selected creator decides which object to create.
+        return creator.createExam(subject, date, time, details);
+    }
+
+    static restoreExam(data) {
+        const exam = ExamFactory.createExam(
+            data.type,
+            data.subject,
+            data.date,
+            data.time,
+            data.details
+        );
+
+        exam.id = data.id;
+        return exam;
+    }
+}
+
+
+// ========================================
+// 6. Examination Manager
+// ========================================
+
 class ExamManager {
     static instance = null;
 
@@ -20,11 +147,21 @@ class ExamManager {
 
     loadExams() {
         try {
-            const saved = localStorage.getItem("examinationSchedules");
-            const parsed = saved ? JSON.parse(saved) : [];
+            const saved = localStorage.getItem(
+                "examinationSchedules"
+            );
 
-            return Array.isArray(parsed) ? parsed : [];
+            const data = saved ? JSON.parse(saved) : [];
+
+            if (!Array.isArray(data)) {
+                return [];
+            }
+
+            return data.map(item => {
+                return ExamFactory.restoreExam(item);
+            });
         } catch (error) {
+            console.error("Could not load examinations:", error);
             return [];
         }
     }
@@ -33,24 +170,40 @@ class ExamManager {
         try {
             localStorage.setItem(
                 "examinationSchedules",
-                JSON.stringify(this.exams)
+                JSON.stringify(
+                    this.exams.map(exam => ({
+                        id: exam.id,
+                        type: exam.type,
+                        subject: exam.subject,
+                        date: exam.date,
+                        time: exam.time,
+                        details: exam.details
+                    }))
+                )
             );
+
+            return true;
         } catch (error) {
+            console.error("Could not save examinations:", error);
             alert("Unable to save data in this browser.");
+            return false;
         }
     }
 
-    addExam(subject, date, time, details) {
-        const exam = {
-            id: Date.now().toString() + Math.random().toString(16).slice(2),
-            subject,
-            date,
-            time,
-            details
-        };
+    addExam(type, subject, date, time, details) {
+        const exam = ExamFactory.createExam(
+            type, subject, date, time, details
+        );
+
+        // Store the type so the factory can restore the right class.
+        exam.type = type;
 
         this.exams.push(exam);
-        this.saveExams();
+
+        if (!this.saveExams()) {
+            this.exams.pop();
+            return null;
+        }
 
         return exam;
     }
@@ -60,39 +213,52 @@ class ExamManager {
     }
 
     deleteExam(id) {
+        const previousExams = this.exams;
+
         this.exams = this.exams.filter(exam => exam.id !== id);
-        this.saveExams();
+
+        if (!this.saveExams()) {
+            this.exams = previousExams;
+            return false;
+        }
+
+        return true;
     }
 
     clearExams() {
+        const previousExams = this.exams;
+
         this.exams = [];
-        this.saveExams();
+
+        if (!this.saveExams()) {
+            this.exams = previousExams;
+            return false;
+        }
+
+        return true;
     }
 }
 
-// Access the Singleton instance
+
+// ========================================
+// 7. Connect JavaScript to the Website
+// ========================================
+
 const manager = ExamManager.getInstance();
 
-// HTML elements
 const examForm = document.getElementById("examForm");
 const examList = document.getElementById("examList");
 const examCount = document.getElementById("examCount");
+
 const verifyBtn = document.getElementById("verifyBtn");
-const singletonStatus = document.getElementById("singletonStatus");
+const factoryStatus = document.getElementById("factoryStatus");
 const clearBtn = document.getElementById("clearBtn");
 
-// Format a date for display
-function formatDate(dateString) {
-    const parts = dateString.split("-");
 
-    if (parts.length !== 3) {
-        return dateString;
-    }
+// ========================================
+// 8. Display Examination Schedule
+// ========================================
 
-    return `${parts[2]}-${parts[1]}-${parts[0]}`;
-}
-
-// Display examinations
 function displayExams() {
     const exams = manager.getExams();
 
@@ -103,6 +269,7 @@ function displayExams() {
         const message = document.createElement("p");
         message.className = "empty-message";
         message.textContent = "No examinations scheduled yet.";
+
         examList.appendChild(message);
         return;
     }
@@ -113,6 +280,9 @@ function displayExams() {
 
         const title = document.createElement("h3");
         title.textContent = exam.subject;
+
+        const type = document.createElement("p");
+        type.textContent = `Type: ${exam.getExamType()}`;
 
         const date = document.createElement("p");
         date.textContent = `Date: ${formatDate(exam.date)}`;
@@ -129,56 +299,106 @@ function displayExams() {
         deleteButton.textContent = "Delete Examination";
 
         deleteButton.addEventListener("click", () => {
-            manager.deleteExam(exam.id);
-            displayExams();
+            if (manager.deleteExam(exam.id)) {
+                displayExams();
+            }
         });
 
-        item.append(title, date, time, details, deleteButton);
+        item.append(
+            title,
+            type,
+            date,
+            time,
+            details,
+            deleteButton
+        );
+
         examList.appendChild(item);
     });
 }
 
-// Add examination
+
+// ========================================
+// 9. Format Date
+// ========================================
+
+function formatDate(dateString) {
+    const parts = dateString.split("-");
+
+    if (parts.length !== 3) {
+        return dateString;
+    }
+
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+}
+
+
+// ========================================
+// 10. Add Examination
+// ========================================
+
 examForm.addEventListener("submit", event => {
     event.preventDefault();
 
+    const type = document.getElementById("examType").value;
     const subject = document.getElementById("subject").value.trim();
     const date = document.getElementById("date").value;
     const time = document.getElementById("time").value;
     const details = document.getElementById("details").value.trim();
 
-    if (!subject || !date || !time || !details) {
+    if (!type || !subject || !date || !time || !details) {
         alert("Please fill in all fields.");
         return;
     }
 
-    manager.addExam(subject, date, time, details);
+    const exam = manager.addExam(
+        type, subject, date, time, details
+    );
+
+    if (!exam) {
+        return;
+    }
 
     examForm.reset();
     displayExams();
 
-    alert("Examination added successfully!");
+    alert(`${exam.getExamType()} created successfully!`);
 });
 
-// Verify Singleton
+
+// ========================================
+// 11. Verify Factory Method
+// ========================================
+
 verifyBtn.addEventListener("click", () => {
-    const anotherReference = ExamManager.getInstance();
+    const testExam = ExamFactory.createExam(
+        "Programming",
+        "Java",
+        "2026-11-15",
+        "10:00",
+        "Factory verification test"
+    );
 
-    if (manager === anotherReference) {
-        singletonStatus.textContent =
-            "Success! Both references point to the same ExamManager instance.";
+    if (testExam instanceof ProgrammingExam) {
+        factoryStatus.textContent =
+            "Success! ExamFactory created a ProgrammingExam object.";
 
-        singletonStatus.style.background = "#dcfce7";
-        singletonStatus.style.color = "#166534";
+        factoryStatus.style.background = "#dcfce7";
+        factoryStatus.style.color = "#166534";
     } else {
-        singletonStatus.textContent = "Different instances detected.";
+        factoryStatus.textContent =
+            "Factory verification failed.";
 
-        singletonStatus.style.background = "#fee2e2";
-        singletonStatus.style.color = "#991b1b";
+        factoryStatus.style.background = "#fee2e2";
+        factoryStatus.style.color = "#991b1b";
     }
 });
 
-// Clear all examinations
+
+// ========================================
+// 12. Clear All Examinations
+// ========================================
+
 clearBtn.addEventListener("click", () => {
     if (manager.getExams().length === 0) {
         alert("There are no examinations to clear.");
@@ -189,15 +409,30 @@ clearBtn.addEventListener("click", () => {
         "Are you sure you want to delete all examinations?"
     );
 
-    if (confirmed) {
-        manager.clearExams();
+    if (confirmed && manager.clearExams()) {
         displayExams();
     }
 });
 
-// Set today's date as the earliest selectable date
-document.getElementById("date").min =
-    new Date().toLocaleDateString("en-CA");
 
-// Load saved examinations on startup
+// ========================================
+// 13. Set Minimum Examination Date
+// ========================================
+
+const dateInput = document.getElementById("date");
+
+const today = new Date();
+const localToday = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0")
+].join("-");
+
+dateInput.min = localToday;
+
+
+// ========================================
+// 14. Load Saved Examinations
+// ========================================
+
 displayExams();
