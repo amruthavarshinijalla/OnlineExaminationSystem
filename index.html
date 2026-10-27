@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Examination System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <h1>Online Examination System</h1>
+        <p>Manage examination schedules in one place</p>
+    </header>
+
+    <main class="container">
+
+        <section class="card">
+            <h2>Singleton Design Pattern</h2>
+            <p>
+                A centralized ExamManager manages examination schedules
+                and ensures that the same instance is reused.
+            </p>
+
+            <button id="verifyBtn" class="secondary-btn">
+                Verify Singleton
+            </button>
+
+            <p id="singletonStatus" class="status" aria-live="polite">
+                Click the button to verify the Singleton instance.
+            </p>
+        </section>
+
+        <section class="card">
+            <h2>Add Examination</h2>
+
+            <form id="examForm">
+                <label for="subject">Subject Name</label>
+                <input
+                    type="text"
+                    id="subject"
+                    placeholder="e.g. Java Programming"
+                    required
+                >
+
+                <label for="date">Examination Date</label>
+                <input type="date" id="date" required>
+
+                <label for="time">Examination Time</label>
+                <input type="time" id="time" required>
+
+                <label for="details">Examination Details</label>
+                <textarea
+                    id="details"
+                    placeholder="Enter examination details"
+                    rows="3"
+                    required
+                ></textarea>
+
+                <button type="submit" class="primary-btn">
+                    Add Examination
+                </button>
+            </form>
+        </section>
+
+        <section class="card">
+            <div class="schedule-heading">
+                <h2>Examination Schedule</h2>
+                <span id="examCount">Total: 0</span>
+            </div>
+
+            <div id="examList">
+                <p class="empty-message">
+                    No examinations scheduled yet.
+                </p>
+            </div>
+
+            <button id="clearBtn" class="delete-btn" type="button">
+                Clear All Examinations
+            </button>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>Online Examination System | Singleton Design Pattern</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
